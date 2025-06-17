@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線座標抽出ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .advanced-controls {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #output {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .info {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>線座標抽出ツール</h1>
+
+        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+            <p>画像をクリックしてアップロードするか、ここにドラッグ&ドロップしてください</p>
+            <button type="button" class="upload-btn">画像を選択</button>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>閾値:</label>
+                <input type="range" id="threshold" min="1" max="255" value="128">
+                <span id="thresholdValue">128</span>
+            </div>
+            <div class="control-group">
+                <label>最小線長:</label>
+                <input type="number" id="minLength" value="5" min="1" max="100">
+            </div>
+            <button id="extractBtn" disabled>座標抽出</button>
+            <button id="downloadBtn" disabled>結果をダウンロード</button>
+        </div>
+
+        <div class="advanced-controls">
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="separateLines" checked>
+                    線を個別に分離（推奨）
+                </label>
+            </div>
+            <div class="control-group">
+                <label>最大線長:</label>
+                <input type="number" id="maxLength" value="1000" min="10" max="10000">
+                <small>（長すぎる線を分割）</small>
+            </div>
+        </div>
+
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div>
+                <h3>原画像</h3>
+                <canvas id="originalCanvas"></canvas>
+            </div>
+            <div>
+                <h3>処理後画像</h3>
+                <canvas id="processedCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="info">
+            <p><strong>使用方法:</strong></p>
+            <p>1. 画像をアップロードしてください</p>
+            <p>2. 閾値を調整して線の検出感度を設定してください（低い値=より多くの線を検出）</p>
+            <p>3. 最小線長を設定してノイズを除去してください</p>
+            <p>4. 「座標抽出」ボタンを押して処理を開始してください</p>
+        </div>
+
+        <h3>抽出結果</h3>
+        <textarea id="output" placeholder="座標データがここに表示されます..."></textarea>
+    </div>
+
+    <script>
+        let originalImageData = null;
+        let processedImageData = null;
+
+        const imageInput = document.getElementById('imageInput');
+        const originalCanvas = document.getElementById('originalCanvas');
+        const processedCanvas = document.getElementById('processedCanvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const processedCtx = processedCanvas.getContext('2d');
+        const thresholdSlider = document.getElementById('threshold');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const minLengthInput = document.getElementById('minLength');
+        const maxLengthInput = document.getElementById('maxLength');
+        const separateLinesCheckbox = document.getElementById('separateLines');
+        const extractBtn = document.getElementById('extractBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const output = document.getElementById('output');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        // ドラッグ&ドロップ対応
+        const uploadArea = document.querySelector('.upload-area');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
+            uploadArea.style.backgroundColor = '#f8f9fa';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.backgroundColor = 'transparent';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.backgroundColor = 'transparent';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageUpload(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageUpload(e.target.files[0]);
+            }
+        });
+
+        thresholdSlider.addEventListener('input', (e) => {
+            thresholdValue.textContent = e.target.value;
+        });
+
+        extractBtn.addEventListener('click', extractLines);
+        downloadBtn.addEventListener('click', downloadResult);
+
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // キャンバスサイズを画像に合わせる
+                    originalCanvas.width = img.width;
+                    originalCanvas.height = img.height;
+                    processedCanvas.width = img.width;
+                    processedCanvas.height = img.height;
+
+                    // 原画像を描画
+                    originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+                    originalCtx.drawImage(img, 0, 0);
+
+                    // 画像データを取得
+                    originalImageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+
+                    extractBtn.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProgress(percent) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = percent + '%';
+            if (percent >= 100) {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+
+        function extractLines() {
+            if (!originalImageData) return;
+
+            extractBtn.disabled = true;
+            output.value = '処理中...';
+            updateProgress(0);
+
+            // 少し遅延を入れてUIを更新
+            setTimeout(() => {
+                try {
+                    const threshold = parseInt(thresholdSlider.value);
+                    const minLength = parseInt(minLengthInput.value);
+                    const maxLength = parseInt(maxLengthInput.value);
+                    const separateLines = separateLinesCheckbox.checked;
+
+                    updateProgress(20);
+
+                    // グレースケール変換とエッジ検出
+                    const processedData = processImage(originalImageData, threshold);
+                    updateProgress(40);
+
+                    // 処理後画像を表示
+                    processedCtx.putImageData(processedData, 0, 0);
+                    updateProgress(60);
+
+                    // 線の追跡
+                    const lines = traceLines(processedData, minLength, maxLength, separateLines);
+                    updateProgress(80);
+
+                    // 結果を出力
+                    const result = formatOutput(lines);
+                    output.value = result;
+                    updateProgress(100);
+
+                    downloadBtn.disabled = false;
+                } catch (error) {
+                    output.value = 'エラーが発生しました: ' + error.message;
+                    updateProgress(0);
+                } finally {
+                    extractBtn.disabled = false;
+                }
+            }, 100);
+        }
+
+        function processImage(imageData, threshold) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const processedData = new ImageData(width, height);
+            const processed = processedData.data;
+
+            // グレースケール変換と二値化
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                const binary = gray < threshold ? 0 : 255;
+
+                processed[i] = binary;     // R
+                processed[i + 1] = binary; // G
+                processed[i + 2] = binary; // B
+                processed[i + 3] = 255;    // A
+            }
+
+            return processedData;
+        }
+
+        function traceLines(imageData, minLength, maxLength, separateLines) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const visited = new Array(width * height).fill(false);
+            const lines = [];
+
+            // 8方向の移動
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+
+            function isBlackPixel(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return false;
+                const index = (y * width + x) * 4;
+                return data[index] === 0; // 黒ピクセル（線）
+            }
+
+            function getNeighbors(x, y) {
+                const neighbors = [];
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                        isBlackPixel(nx, ny) && !visited[ny * width + nx]) {
+                        neighbors.push([nx, ny]);
+                    }
+                }
+                return neighbors;
+            }
+
+            function traceLineSegment(startX, startY) {
+                const line = [];
+                let currentX = startX;
+                let currentY = startY;
+
+                // 開始点をマーク
+                visited[currentY * width + currentX] = true;
+                line.push([currentX, currentY]);
+
+                while (true) {
+                    const neighbors = getNeighbors(currentX, currentY);
+
+                    if (neighbors.length === 0) {
+                        // 終点に到達
+                        break;
+                    } else if (neighbors.length === 1) {
+                        // 直線の継続
+                        const [nextX, nextY] = neighbors[0];
+                        visited[nextY * width + nextX] = true;
+                        line.push([nextX, nextY]);
+                        currentX = nextX;
+                        currentY = nextY;
+                    } else {
+                        // 分岐点 - 最も近い点を選択（直線性を保つ）
+                        let bestNext = neighbors[0];
+                        if (line.length >= 2) {
+                            const prevX = line[line.length - 2][0];
+                            const prevY = line[line.length - 2][1];
+                            const dirX = currentX - prevX;
+                            const dirY = currentY - prevY;
+
+                            let bestScore = -Infinity;
+                            for (const [nx, ny] of neighbors) {
+                                const newDirX = nx - currentX;
+                                const newDirY = ny - currentY;
+                                // 方向の一致度を計算（内積）
+                                const score = dirX * newDirX + dirY * newDirY;
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestNext = [nx, ny];
+                                }
+                            }
+                        }
+
+                        const [nextX, nextY] = bestNext;
+                        visited[nextY * width + nextX] = true;
+                        line.push([nextX, nextY]);
+                        currentX = nextX;
+                        currentY = nextY;
+                    }
+                }
+
+                return line;
+            }
+
+            // 連結成分を見つけて、各成分を個別の線として処理
+            function findConnectedComponents() {
+                const components = [];
+                const componentVisited = new Array(width * height).fill(false);
+
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const index = y * width + x;
+                        if (!componentVisited[index] && isBlackPixel(x, y)) {
+                            const component = [];
+                            const stack = [[x, y]];
+
+                            while (stack.length > 0) {
+                                const [cx, cy] = stack.pop();
+                                const cIndex = cy * width + cx;
+
+                                if (componentVisited[cIndex] || !isBlackPixel(cx, cy)) continue;
+
+                                componentVisited[cIndex] = true;
+                                component.push([cx, cy]);
+
+                                for (const [dx, dy] of directions) {
+                                    const nx = cx + dx;
+                                    const ny = cy + dy;
+                                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                        stack.push([nx, ny]);
+                                    }
+                                }
+                            }
+
+                            if (component.length >= minLength) {
+                                components.push(component);
+                            }
+                        }
+                    }
+                }
+
+                return components;
+            }
+
+            // 連結成分を取得
+            const components = findConnectedComponents();
+
+            // 各連結成分を線分に分解
+            for (const component of components) {
+                // visitedをリセット（この成分内でのみ）
+                const componentVisited = new Array(width * height).fill(false);
+
+                // 端点を見つける（隣接点が1個以下の点）
+                const endpoints = [];
+                const junctions = [];
+
+                for (const [x, y] of component) {
+                    let neighborCount = 0;
+                    for (const [dx, dy] of directions) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (component.some(([cx, cy]) => cx === nx && cy === ny)) {
+                            neighborCount++;
+                        }
+                    }
+
+                    if (neighborCount <= 1) {
+                        endpoints.push([x, y]);
+                    } else if (neighborCount > 2) {
+                        junctions.push([x, y]);
+                    }
+                }
+
+                // 端点から線をトレース
+                const usedPoints = new Set();
+
+                for (const [startX, startY] of endpoints) {
+                    const pointKey = `${startX},${startY}`;
+                    if (usedPoints.has(pointKey)) continue;
+
+                    // この端点から線をトレース
+                    const line = [];
+                    let currentX = startX;
+                    let currentY = startY;
+
+                    while (true) {
+                        const pointKey = `${currentX},${currentY}`;
+                        if (usedPoints.has(pointKey)) break;
+
+                        usedPoints.add(pointKey);
+                        line.push([currentX, currentY]);
+
+                        // 次の点を探す
+                        let nextPoint = null;
+                        for (const [dx, dy] of directions) {
+                            const nx = currentX + dx;
+                            const ny = currentY + dy;
+                            const nextKey = `${nx},${ny}`;
+
+                            if (!usedPoints.has(nextKey) &&
+                                component.some(([cx, cy]) => cx === nx && cy === ny)) {
+                                nextPoint = [nx, ny];
+                                break;
+                            }
+                        }
+
+                        if (!nextPoint) break;
+
+                        currentX = nextPoint[0];
+                        currentY = nextPoint[1];
+                    }
+
+                    if (line.length >= minLength) {
+                        // 長すぎる線を分割
+                        if (separateLines && line.length > maxLength) {
+                            for (let i = 0; i < line.length; i += maxLength) {
+                                const segment = line.slice(i, i + maxLength);
+                                if (segment.length >= minLength) {
+                                    lines.push(segment);
+                                }
+                            }
+                        } else {
+                            lines.push(line);
+                        }
+                    }
+                }
+
+                // 残った未使用の点から線をトレース（ループなど）
+                for (const [x, y] of component) {
+                    const pointKey = `${x},${y}`;
+                    if (usedPoints.has(pointKey)) continue;
+
+                    const line = [];
+                    let currentX = x;
+                    let currentY = y;
+
+                    while (true) {
+                        const pointKey = `${currentX},${currentY}`;
+                        if (usedPoints.has(pointKey)) break;
+
+                        usedPoints.add(pointKey);
+                        line.push([currentX, currentY]);
+
+                        let nextPoint = null;
+                        for (const [dx, dy] of directions) {
+                            const nx = currentX + dx;
+                            const ny = currentY + dy;
+                            const nextKey = `${nx},${ny}`;
+
+                            if (!usedPoints.has(nextKey) &&
+                                component.some(([cx, cy]) => cx === nx && cy === ny)) {
+                                nextPoint = [nx, ny];
+                                break;
+                            }
+                        }
+
+                        if (!nextPoint) break;
+
+                        currentX = nextPoint[0];
+                        currentY = nextPoint[1];
+                    }
+
+                    if (line.length >= minLength) {
+                        // 長すぎる線を分割
+                        if (separateLines && line.length > maxLength) {
+                            for (let i = 0; i < line.length; i += maxLength) {
+                                const segment = line.slice(i, i + maxLength);
+                                if (segment.length >= minLength) {
+                                    lines.push(segment);
+                                }
+                            }
+                        } else {
+                            lines.push(line);
+                        }
+                    }
+                }
+            }
+
+            return lines;
+        }
+
+        function sortLinePoints(points) {
+            if (points.length <= 1) return points;
+
+            const sorted = [points[0]];
+            const remaining = points.slice(1);
+
+            while (remaining.length > 0) {
+                const lastPoint = sorted[sorted.length - 1];
+                let nearestIndex = 0;
+                let nearestDistance = Infinity;
+
+                for (let i = 0; i < remaining.length; i++) {
+                    const distance = Math.abs(remaining[i][0] - lastPoint[0]) +
+                                   Math.abs(remaining[i][1] - lastPoint[1]);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestIndex = i;
+                    }
+                }
+
+                sorted.push(remaining[nearestIndex]);
+                remaining.splice(nearestIndex, 1);
+            }
+
+            return sorted;
+        }
+
+        function formatOutput(lines) {
+            return lines.map(line =>
+                line.map(point => `${point[0]},${point[1]}`).join(' ')
+            ).join('\n');
+        }
+
+        function downloadResult() {
+            const result = output.value;
+            if (!result || result === '処理中...') return;
+
+            const blob = new Blob([result], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'line_coordinates.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

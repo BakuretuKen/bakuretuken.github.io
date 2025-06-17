@@ -1,0 +1,7 @@
+<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><title>PC88風Canvas描画テスト</title><style>canvas {
+        border: 1px solid #ccc;
+      }</style><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-cache"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><script defer="defer" src="bundle.min.js"></script></head><body><h1>PC88風Canvas描画テスト</h1>
+      <canvas id="canvas" width="480" height="304" data-src="data2.txt"></canvas>
+      <script type="module" src="/src/main.ts"></script><p id="output"></p><p>0:黒 1:青 2:赤 3:紫 4:緑 5:水色 6:黄 7:白</p><p><a id="data_link" href="#" target="_blank">読み込みデータ</a></p></body><script>const canvas = document.getElementById('canvas');
+      const data_link = document.getElementById('data_link');
+      data_link.href = canvas.dataset.src;</script></html>
