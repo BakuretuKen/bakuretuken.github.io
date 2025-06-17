@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bakuretu Bomb DEMO</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<script src="enchant.min.js"></script>
+</head>
+<body style="margin:0; padding: 0; background-color: #ccc;">
+
+<script type="text/javascript" charset="utf-8">
+
+var BOMB_GAME_WIDTH  = 540;
+var BOMB_GAME_HEIGHT = 800;
+var BOMB_GAME_FPS = 12;
+var BOMB_GAME_LIMIT_TIME = 30;
+var BOMB_GAME_TIMER_LABEL_COLOR = "black";
+var BOMB_GAME_BAKURETU_BOMB_RATE = 20;
+var BOMB_GAME_BAKURETU_BOMB_SOUND = "on";
+
+var userAgent = navigator.userAgent.toLowerCase();
+if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
+    document.write('<div id="enchant-stage" style="width:'+BOMB_GAME_WIDTH+'px; height:'+BOMB_GAME_HEIGHT+'px; cursor:hand"></div>');
+}
+</script>
+
+<script src="bakuretubomb104.min.js"></script>
+
+</body>
+</html>
