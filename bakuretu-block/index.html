@@ -17,12 +17,14 @@ var BLOCK_BAR_MARGIN_BOTTOM = 80; // 画面下からの反射パネルの高さ
 var BLOCK_GAME_BLOCK_SIZE = 32; // ブロックのサイズ（16 or 32）
 </script>
 
+<div style="display: grid; place-items: center; height: 100vh;">
 <script type="text/javascript" charset="utf-8">
 var userAgent = navigator.userAgent.toLowerCase();
 if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
     document.write('<div id="enchant-stage" style="width:'+BLOCK_GAME_WIDTH+'px; height:'+BLOCK_GAME_HEIGHT+'px; cursor:hand; margin: 0 auto;"></div>');
 }
 </script>
+</div>
 
 <script src="bakuretublock002.min.js"></script>
 <!-- <script src="bakuretublock.js"></script> -->
