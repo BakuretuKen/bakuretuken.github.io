@@ -8,14 +8,24 @@
 </head>
 <body style="margin:0px; padding: 0px; background-color: #ccc;">
 
+<script>
+var BLOCK_GAME_WIDTH = 480; // ゲーム画面幅（ブロック幅の倍数のみ設定可能）
+var BLOCK_GAME_HEIGHT = 640; // ゲーム画面高さ（ブロック幅の倍数のみ設定可能）
+var BLOCK_GAME_FPS = 24; // フレームレート
+var BLOCK_GAME_BALL_SPEED = 10; // ボールの速度
+var BLOCK_BAR_MARGIN_BOTTOM = 80; // 画面下からの反射パネルの高さ
+var BLOCK_GAME_BLOCK_SIZE = 32; // ブロックのサイズ（16 or 32）
+</script>
+
 <script type="text/javascript" charset="utf-8">
 var userAgent = navigator.userAgent.toLowerCase();
 if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
-    document.write('<div id="enchant-stage" style="width:480px; height:640px; cursor:hand; margin: 0 auto;"></div>');
+    document.write('<div id="enchant-stage" style="width:'+BLOCK_GAME_WIDTH+'px; height:'+BLOCK_GAME_HEIGHT+'px; cursor:hand; margin: 0 auto;"></div>');
 }
 </script>
 
-<script src="bakuretublock.min.js"></script>
+<script src="bakuretublock002.min.js"></script>
+<!-- <script src="bakuretublock.js"></script> -->
 
 </body>
 </html>
