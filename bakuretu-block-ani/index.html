@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>JavaScript版「爆裂ブロック崩し」</title>
+<script src="enchant.min.js"></script>
+<meta name="viewport" content="width=device-width">
+<body style="margin:0px; padding: 0px; background-color: #ccc;">
+
+<div style="display: grid; place-items: center; height: 100vh;">
+<script type="text/javascript" charset="utf-8">
+var userAgent = navigator.userAgent.toLowerCase();
+if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
+    document.write('<div id="enchant-stage" style="width:480px; height:672px; cursor:hand; margin: 0 auto;"></div>');
+}
+</script>
+</div>
+
+<script src="bakuretublock.js"></script>
+
+</body>
+</html>
