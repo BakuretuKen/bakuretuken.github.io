@@ -1,5 +1,5 @@
 /**
- * 爆裂ブロック 重ね着バージョン JavaScript版 ver2.05b
+ * 爆裂ブロック 重ね着バージョン JavaScript版 ver2.05c
  * https://bakuretuken.com/block/
  */
 
@@ -361,6 +361,7 @@ window.onload = function()
 
 function initGame(targetImage)
 {
+    sf = new Surface(BLOCK_GAME_WIDTH, BLOCK_GAME_HEIGHT);
     sf.context.clearRect(0, 0, sf.width, sf.height);
     sf.context.drawImage(targetImage, 0, 0);
 
