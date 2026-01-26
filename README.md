@@ -8,5 +8,7 @@
 * [bakuretu-block](/bakuretu-block)
 * [bakuretu-bomb](/bakuretu-bomb)
 * [pc88canvas](/pc88canvas)
+* [rgbimage](/rgbimage)
 
-BakuretuKen Pages
+BakuretuKen Page<br />
+[https://bakuretuken.com](https://bakuretuken.com)
