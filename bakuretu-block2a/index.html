@@ -4,9 +4,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>JavaScript版「爆裂ブロック崩し」重ね着バージョン</title>
 <meta name="viewport" content="width=device-width">
-<script src="enchant.min.js"></script>
+  <script type="module" crossorigin src="./bakuretublock300.js"></script>
 </head>
-<body style="margin:0px; padding: 0px; background-color: #ccc;">
+<body style="margin:0px; padding: 0px; background-color: #ccc; overscroll-behavior-y: none;">
 
 <script>
 var BLOCK_GAME_SCREEN = 2; // ゲーム数（1 or 2）
@@ -25,17 +25,6 @@ var BLOCK_GAME_ANIME_POSITION_Y = 110; // アニメーション画像Y位置
 var BLOCK_GAME_ANIME_FRAME = 2; // アニメーション画像切り替えフレーム数
 var BLOCK_GAME_ANIME_WAIT = 40; // アニメーション待ちフレーム数
 </script>
-
-<div style="display: grid; place-items: center; height: 100vh;">
-<script type="text/javascript" charset="utf-8">
-var userAgent = navigator.userAgent.toLowerCase();
-if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
-    document.write('<div id="enchant-stage" style="width:'+BLOCK_GAME_WIDTH+'px; height:'+BLOCK_GAME_HEIGHT+'px; cursor:hand; margin: 0 auto;"></div>');
-}
-</script>
-</div>
-
-<script src="bakuretublock208.js"></script>
 
 </body>
 </html>

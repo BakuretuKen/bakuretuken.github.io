@@ -4,11 +4,14 @@
 <title>Bakuretu Bomb DEMO</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<script src="enchant.min.js"></script>
+  <script type="module" crossorigin src="./bakuretubomb300.js"></script>
 </head>
 <body style="margin:0; padding: 0; background-color: #ccc; overscroll-behavior-y: none;">
 
-<div style="display: grid; place-items: center; height: 100vh;">
+<!-- ステージは表示領域全体を覆う。中央寄せは Phaser の Scale Manager（autoCenter）に任せる -->
+<!-- 100vh はスマホでは URL バー等を含んだ高さになり上下中央がずれるため、絶対配置 + height:100% を使う -->
+<div id="game-stage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;"></div>
+
 <script type="text/javascript" charset="utf-8">
 
 var BOMB_GAME_WIDTH  = 473;
@@ -22,14 +25,8 @@ var BOMB_GAME_ANIME_POSITION_Y = 59;
 var BOMB_GAME_ANIME_FRAME = 1;
 var BOMB_GAME_ANIME_WAIT = 40;
 
-var userAgent = navigator.userAgent.toLowerCase();
-if(userAgent.indexOf("iphone") == -1 && userAgent.indexOf("android") == -1) {
-    document.write('<div id="enchant-stage" style="width:'+BOMB_GAME_WIDTH+'px; height:'+BOMB_GAME_HEIGHT+'px; cursor:hand; margin: 0 auto;"></div>');
-}
 </script>
-</div>
 
-<script src="bakuretubomb200.js"></script>
 
 </body>
 </html>
